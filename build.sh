@@ -1,7 +1,7 @@
 #!/bin/bash
 tag=$1
 if [ -z "$tag" ]; then
-	$tag="untitled"
+	tag="untitled"
 fi
 compression_level=9
 images=images

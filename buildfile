@@ -13,9 +13,6 @@ RUN locale-gen "en_US.UTF-8"; \
 ## Update
 RUN apt-get update
 
-## Required Tools
-RUN apt-get install -y ipcalc
-
 ## WWAN
 COPY scripts/wwan-connect /usr/bin/wwan-connect
 RUN apt-get install -y modemmanager; \

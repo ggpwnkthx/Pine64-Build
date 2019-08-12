@@ -20,7 +20,7 @@ RUN apt-get install -y ipcalc
 COPY scripts/wwan-connect /usr/bin/wwan-connect
 RUN apt-get install -y modemmanager; \
 	chmod +x /usr/bin/wwan-connect; \
-	echo '* * * * * /usr/bin/wwan-connect' >> /var/spool/cron/crontabs/root
+	echo "\* \* \* \* \* /usr/bin/wwan-connect" >> /var/spool/cron/crontabs/root
 
 ## WLAN
 RUN cp /lib/udev/rules.d/80-net-setup-link.rules /etc/udev/rules.d/; \

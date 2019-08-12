@@ -1,0 +1,68 @@
+#!/bin/bash
+
+get_carrier_bearer() {
+	case $1 in
+	"Verizon" | "VZW") echo "apn=vzwinternet,number=*99***3#" ;;
+	esac
+}
+connect() {
+	m=$1
+	
+	# Power on the radio
+	echo "Checking state on $m..."
+	if [ "disabled" == "$(mmcli -m $m | grep state | grep -v power | awk '{print $3}')" ]; then
+		mmcli -m $m -e
+		echo "$m enabled"
+	fi
+	# Get/Set bearer
+	echo "Checking bearer on $m..."
+	b=$(mmcli -m $m | grep Bearer | awk '{print $4}' | tr -d \'\")
+	if [ -z $b ] || [ "$b" == "none" ]; then
+		echo "Creating bearer for $m..."
+		c="$(mmcli -m $m | grep 'operator name' | awk '{$1=""; $2=""; $3=""; print $0}' | xargs)"
+		mmcli -m $m --create-bearer="$(get_carrier_bearer $c)"
+		b=$(mmcli -m $m | grep Bearer | awk '{print $4}' | tr -d \'\")
+		echo "Created $b for $m"
+	fi
+	# Connect if not
+	echo "Checking connection status for $b..."
+	if [ "no" == "$(mmcli -b $b | grep connected | awk '{print $4}'| tr -d \'\")" ]; then
+		echo "Connecting $b..."
+		mmcli -b $b -c
+	fi
+	i=$(mmcli -b $b | grep interface | awk '{print $3}' | tr -d \'\")
+	while [ "$i" == "unknown" ]; do
+		sleep 1
+		i=$(mmcli -b $b | grep interface | awk '{print $3}' | tr -d \'\")
+	done
+	# (Re)Set IP address for wwan interface
+	echo "Setting IP address for $b on $i..."
+	if [ "yes" == "$(mmcli -b $b | grep connected | awk '{print $4}' | tr -d \'\")" ]; then
+		b_ip=$(mmcli -b $b | grep address | awk '{print $3}' | tr -d \'\")
+		b_prefix=$(mmcli -b $b | grep prefix | awk '{print $3}' | tr -d \'\")
+		b_gateway=$(mmcli -b $b | grep gateway | awk '{print $3}' | tr -d \'\")
+		c_ip=$(ip addr show $i | grep inet | awk '{print $2}' | awk -F/ '{print $1}')
+		if [ "$b_ip" != "$c_ip" ]; then
+			ip addr flush dev $i
+			ip route del 0/0 dev $i
+			ip addr add $b_ip/$b_prefix dev $i
+			ip route add default via $b_gateway dev $i
+		fi
+	fi
+}
+
+if [ -z "$1" ]; then
+	modems=($(mmcli -L | grep -v Found | awk '{print $1}'))
+	for m in "${modems[@]}"
+	do
+		connect $m
+	done
+else 
+	modems=($(mmcli -L | grep -v Found | awk '{print $1}'))
+	for m in "${modems[@]}"
+	do
+		if [ "$1" == "$m" ] || [ "$1" == "$(echo $m | awk -F/ '{print $NF}')" ] || [ "$1" == "$(mmcli -m 0 | grep ports | awk -F"(net)" '{print $1}' | awk '{print $(NF-1)}')" ]; then
+			connect $m
+		fi
+	done
+fi

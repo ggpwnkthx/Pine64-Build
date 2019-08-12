@@ -1,9 +1,6 @@
 ## Get latest version
 FROM stretch minimal rock64 latest arm64
 
-RUN echo "This is a test" && \
-	echo "& this is another test"
-
 ## Locale
 RUN locale-gen "en_US.UTF-8"; \
 	sed -i -e "s/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/g" /etc/locale.gen; \
@@ -15,8 +12,6 @@ RUN locale-gen "en_US.UTF-8"; \
 
 ## Update
 RUN apt-get update
-
-
 
 ## Required Tools
 RUN apt-get install -y ipcalc

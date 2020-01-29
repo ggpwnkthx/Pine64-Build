@@ -1,4 +1,7 @@
 #!/bin/bash
+
+#./build.sh [name of new image (optional, defaults to "untitled")] [path to build file (optional if buildfile in current working dir)]
+
 tag=$1
 if [ -z "$tag" ]; then
 	tag="untitled"
